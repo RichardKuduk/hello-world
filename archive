@@ -1,0 +1,141 @@
+
+// Richard L00120064
+var xmlhttp;  // reference to XMLHttpRequest object
+var yearsCounter;
+
+
+window.onload=function()
+{
+  getAjaxData();
+
+
+}
+function getAjaxData()
+{
+  xmlhttp=new XMLHttpRequest();
+  xmlhttp.onreadystatechange=function ()
+  {
+
+    showAjaxData();
+  };
+
+  // get data from getData.php passing first year
+  xmlhttp.open("GET","getData.php?year=2000",true);
+  xmlhttp.send();
+
+}
+function showAjaxData(){
+  if (xmlhttp.readyState==4 && xmlhttp.status==200)
+  {
+    // Receive data from getData.php
+    var data = JSON.parse(xmlhttp.responseText);
+    // Variable to build selecct value
+    var output = "";
+    // First option all teams
+    output += '<option value="' + 'All' + '">' + 'All' + '</option>';
+    // Loop to insert year into select values
+    for(var i = 0 ; i < data.number.length ; i++)
+    {
+      // This inserts year from getData.php query into select
+      output += '<option value="' + data.number[i].year + '">' + data.number[i].year + '</option>';
+
+    }
+    // Accesing DOM element yearChoosen
+    document.getElementById("yearChoosen").innerHTML = output;
+
+    // Reset variable to the empty string
+    var output = "";
+    // Insert ALL at the begining
+    output += '<option value="' + 'All' + '">' + 'All' + '</option>';
+    // Loop to insert country names into select
+    for(var i = 0 ; i < data.teams.length ; i++)
+    {
+      output += '<option value="' + data.teams[i].name + '">' + data.teams[i].name + '</option>';
+    }
+    // Accesing DOM element countryChoosen
+    document.getElementById("countryChoosen").innerHTML = output;
+
+   }
+}
+
+// function onclick by button Find
+function fillterTable()
+{
+
+  xmlhttp=new XMLHttpRequest();
+  xmlhttp.onreadystatechange=function ()
+  {
+    // Table building function
+    fillterData();
+  };
+  // Variable to hold id of the selected team
+  var teamChoosen = document.getElementById("countryChoosen").selectedIndex;
+  // Variable to hold year choosen
+  var optionYear = document.getElementById("yearChoosen").value;
+
+  //alert("Choosen year: " + optionYear);
+  // if All option choosen
+  if(optionYear == "All")
+  {
+    // optionyear changed to display all the years from the table
+    optionYear = 'ANY (SELECT year FROM `results`)';
+  }
+  // if index of team chosen different than zero
+  if(teamChoosen != 0)
+  {
+    // modify optionYear query adding HomeTeamID = indexOf Choosen Team (choose home games and away games)
+    optionYear += ' AND (HomeTeamID= ' + teamChoosen + ' OR AwayTeamID = ' + teamChoosen + ')';
+  }
+
+  alert(optionYear);
+  // Passing the current optionyear to the getData.php
+  xmlhttp.open("GET","getData.php?year="+optionYear,true);
+  xmlhttp.send();
+
+ //SELECT * FROM `results` WHERE year=2002 AND (`HomeTeamID`= 2 OR `AwayTeamID` = 2)
+
+
+}
+// Table builder
+function  fillterData()
+{
+  if (xmlhttp.readyState==4 && xmlhttp.status==200)
+  {
+    var data = JSON.parse(xmlhttp.responseText);
+
+    // Variable to hold html output
+    output = '<table border="1" id="results" style="margin: auto;">' +
+    "<tr> <th>ROUND</th> <th>DATE</th>  <th>ICON</th>  <th>HOME TEAM</th> <th>Team 1 Score</th>"+
+    "<th>-</th> <th>Team 2 Score</th>  <th>AWAY TEAM</th>  <th>ICON</th>  <th>VENUE</th> </tr>";
+    // loop thorugh each row and add data
+    for (var i = 0; i < data.results.length; i++)
+    {
+      output += '<tr>';
+      output += '<td>' + data.results[i].rnd + '</td>';
+      output += "<td>" + data.results[i].date + "</td>";
+      // Using home team id as corresponding image title in images folder
+      output += "<td>" + '<img src="images/' + data.results[i].HomeTeamID+'.png" alt="icon" class="icons" />' + "</td>";
+      // data.result is parsed to int from string and acts as an id for team name in teams table
+      output += "<td>" + data.teams[parseInt(data.results[i].HomeTeamID)-1].name + "</td>";
+      output += "<td>" + data.results[i].HomeTeamScore + "</td>";
+      output += "<td>" + '-' + "</td>";
+      output += "<td>" + data.results[i].AwayTeamScore + "</td>";
+      output += "<td>" + data.teams[parseInt(data.results[i].AwayTeamID)-1].name + "</td>";
+      output += "<td>" + '<img src="images/' + data.results[i].AwayTeamID+'.png" alt="icon" class="icons" />' + "</td>";
+      output += "<td>" + data.results[i].venue + "</td>";
+      output += '</tr>';
+    }
+    // Closing table
+    output += '</table>';
+    // insert table to div in html page
+
+    document.getElementById("tableDisplay").innerHTML = output;
+    // insert date in header
+
+    document.getElementsByClassName("year")[0].innerHTML = document.getElementById("yearChoosen").value;
+    // insert date in footer
+    document.getElementById("footerYear").innerHTML = currentYear;
+
+
+  }
+}
